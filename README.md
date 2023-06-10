@@ -26,7 +26,7 @@ You can also use your own samples or music, as long as they have a .wav extensio
 
 Make note that im ignoring LIBRARIES cell
 
-# 1st cell
+# 1st cell part 1 (Caution : this cell can take a long time to execute)
 
 1) Load the audio file you want to analyze using the librosa.load function. It returns the audio signal as a one dimensional numpy arrayand sample rate
 
@@ -64,7 +64,7 @@ Where:
 
 Of course, we use built-in methods, and as a result we do not have to worry about the exact mapping of the formulas, but it is good to know what we use.
 
-3) Applying the ICA algorith to the spectrogram using the FastICA class from the sklearn library. Virtualize original spectrogram using librosa.display.specshow , also display 9 independent components.
+3) Applying the ICA algorithm to the spectrogram using the FastICA class from the sklearn library. Virtualize original spectrogram using librosa.display.specshow , also display 9 independent components.
 
 A signal spectrum shows which frequency components are included in a given signal. A decibel spectrum shows the same information, but the scale of amplitudes is logarithmic, which is often clearer to the human ear, which perceives loudness in a logarithmic manner.
 
@@ -92,7 +92,7 @@ for i, s in enumerate(S_):
 
 This displays graphs of these components in the time domain. For each component, its behaviour over time is shown, allowing you to understand how the individual components affect the signal.
 
-# 2nd cell
+# 1nd cell part 2
 This code snippet analyses the sound file by segmenting it and then performing ICA for each segment. In addition, for each ICA component, it calculates the dominant frequency.
 
 Steps:
@@ -115,3 +115,39 @@ A value of 0.0 is usually associated with the DC component of the signal. This m
 Negative frequencies appear as a result of Hermitian symmetry resulting from the Fourier transform for real signals. In short, for real input signals, the Fourier transform produces a symmetrical result, with half of the signal energy concentrated on positive frequencies and the other half on negative frequencies. In practice, for real signals, we often only analyse half of the results (usually for positive frequencies), because the other half is a mirror image.
 
 In the context of sound, we tend to ignore negative frequencies because they have no direct physical meaning - we cannot hear 'negative' sounds. If you see negative frequencies in your results, they can probably be ignored or the results can be processed to include only positive frequencies.
+
+# 2nd cell
+
+In this code snippet, I perform a procedure to separate harmonics from noise, and then perform ICA on the resulting signal.
+
+I use the librosa.effects.harmonic function, which separates harmonics from noise. The harmonics in an audio signal are those which are integer multiples of the fundamental frequency of the sound.
+Specifically, if we have a sound with a fundamental frequency f, the harmonics are an integral part of the perception of the sound, giving it a characteristic 'color' or 'hue'.
+
+The librosa.effects.harmonic function works by filtering the input signal using the local median. This is a type of non-linear filtering that is effective in eliminating short-lived noise, leaving longer-lived harmonics.
+
+Please note that I am creating a new FastICA , in order to apply de-noising. In this case we are using it to identify and isolate harmonics. I then reconstruct the signal by performing a matrix multiplication between the resulting ICA components and the mixing matrix, and then summing the result along one of the axes. The result is the reconstructed signal.
+
+The following is similar to cell 1 part 1. The difference is i am saving reconstructed signal to wav file.
+
+It is worth noting that we will not fully remove the reduction due to the quality of the recording I tested on. It is not perfect, but the vast majority of noise is removed.
+
+
+# 3rd cell
+
+This code snippet is intended to separate the various instruments present in a sound file.
+
+Process procedure:
+
+1) Load a sound file and calculate its spectrum using the STFT.
+2) Perform ICA on this spectrum. We assume that there are 4 instruments in our sound file, so we set n_components=4 (for tdh.wav).
+3) Perform ICA on the transpose of the spectrum, adjusting for the time dimension.
+4) For each instrument,  transform the resulting components back to the original spectral space, display the spectrum, and then reconstruct the audio signal using an inverse STFT transformation.
+5) Scale the signal to the 16-bit int range and save the result to a wav file.
+
+Why it will not work?
+
+This is related to how music editing and digital music processing itself is done these days. This is a very complicated process, one of whose tasks is to equalise the frequencies and volumes of the individual instruments.
+
+In order to perform the instrument retrieval process correctly, you would probably need to rely on a neural network and have a lot more knowledge about music editing itself in music studios. Presumably, you would also need some data about the specific song.
+
+If you really want to check the output, I RECOMMEND turning down the volume! You do so at your own risk! You have been warned.
